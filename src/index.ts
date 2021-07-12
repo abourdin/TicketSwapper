@@ -1,50 +1,59 @@
-import {start} from "./start";
+import { start } from './start'
 
-import yargs from 'yargs';
+import yargs from 'yargs'
 
-import cluster from 'cluster';
+import cluster from 'cluster'
 
-const numCPUs = require('os').cpus().length;
+const numCPUs = require('os').cpus().length
 
 const argv = yargs
-    .option('url', {
-        alias: 'u',
-        description: 'Event URL',
-        type: 'string',
-    })
-    .option('cluster', {
-        alias: 'c',
-        description: 'Cluster mode, starts multiple connections at once. Attention, might get you banned',
-        type: 'boolean',
-    })
-    .option('ticketoption', {
-        alias: 'o',
-        description: 'Event ticket option, starts at 1',
-        type: 'number',
-
-    })
-    .option('token', {
-        alias: 't',
-        description: 'Ticketswap token',
-        type: 'string',
-    })
-    .demandOption(['u','t'])
-    .help()
-    .alias('help', 'h')
-    .argv;
+  .option('url', {
+    alias: 'u',
+    description: 'Event URL',
+    type: 'string',
+  })
+  .option('id', {
+    alias: 'i',
+    description: 'Event ID',
+    type: 'string',
+  })
+  .option('cluster', {
+    alias: 'c',
+    description:
+      'Cluster mode, starts multiple connections at once. Attention, might get you banned',
+    type: 'boolean',
+  })
+  .option('ticketoption', {
+    alias: 'o',
+    description: 'Event ticket option, starts at 1',
+    type: 'number',
+  })
+  .option('token', {
+    alias: 't',
+    description: 'Ticketswap token',
+    type: 'string',
+  })
+  .demandOption(['t'])
+  .help()
+  .alias('help', 'h').argv
 
 if (argv.cluster && cluster.isMaster) {
-    console.info(`Start in cluster mode, spawning ${numCPUs} processes.`)
-    console.log(`Master ${process.pid} is running`);
+  console.info(`Start in cluster mode, spawning ${numCPUs} processes.`)
+  console.log(`Master ${process.pid} is running`)
 
-    // Fork workers.
-    for (let i = 0; i < numCPUs; i++) {
-        cluster.fork();
-    }
+  // Fork workers.
+  for (let i = 0; i < numCPUs; i++) {
+    cluster.fork()
+  }
 
-    cluster.on('exit', (worker) => {
-        console.log(`worker ${worker.process.pid} died`);
-    });
+  cluster.on('exit', (worker) => {
+    console.log(`worker ${worker.process.pid} died`)
+  })
 } else {
-    start(argv.url, argv.token, argv.ticketoption)
+  start({
+    url: argv.url,
+    id: argv.id,
+    token: argv.token,
+    ticketOption: argv.ticketoption,
+  })
 }

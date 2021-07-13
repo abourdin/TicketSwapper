@@ -12,11 +12,6 @@ const argv = yargs
     description: 'Event URL',
     type: 'string',
   })
-  .option('id', {
-    alias: 'i',
-    description: 'Event ID',
-    type: 'string',
-  })
   .option('cluster', {
     alias: 'c',
     description:
@@ -52,7 +47,6 @@ if (argv.cluster && cluster.isMaster) {
 } else {
   start({
     url: argv.url,
-    id: argv.id,
     token: argv.token,
     ticketOption: argv.ticketoption,
   })

@@ -1,10 +1,5 @@
-import { AvailableTicket } from './ticket'
+import { AvailableListing } from './ticket'
 import { postRequest } from './request'
-
-export type CartAddTicket = {
-  hash: AvailableTicket['hash']
-  listingId: AvailableTicket['listingId']
-}
 
 export type CartAddResponse = {
   data: {
@@ -16,18 +11,18 @@ export type CartAddResponse = {
   }
 }
 
-async function addTicket(
+export async function addTicket(
   token: string,
-  { listingId, hash }: CartAddTicket
+  { listingId, hash, amountOfTickets }: AvailableListing
 ): Promise<CartAddResponse[]> {
   const body = [
     {
       operationName: 'addTicketsToCart',
       variables: {
         input: {
-          listingId: listingId,
+          listingId,
           listingHash: hash,
-          amountOfTickets: 1,
+          amountOfTickets,
         },
       },
       query:
@@ -45,8 +40,4 @@ async function addTicket(
     headers,
   })
   return JSON.parse(result)
-}
-
-export const Cart = {
-  addTicket,
 }

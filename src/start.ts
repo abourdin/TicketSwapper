@@ -4,12 +4,10 @@ import * as Ticket from './ticket'
 
 export async function start({
   url,
-  id,
   token,
   ticketOption = 1,
 }: {
   url: string
-  id: string
   token: string
   ticketOption: number
 }) {
@@ -17,17 +15,22 @@ export async function start({
     throw new Error('Ticket option should be at least 1 or higher.')
   }
 
-  const eventId = id || (await Event.getEventIdFromURL(url))
+  const event = await Event.getEventIdFromURL(url)
 
   async function loop() {
-    const data = await Event.getData(eventId)
+    let data
+    if (event.type === 'event') {
+      data = await Event.getEventData(event.id)
+    } else if (event.type === 'eventType') {
+      data = await Event.getEventTypeData(event.id)
+    }
 
     // TODO check how many tickets are currently in the cart
     const availableTickets = Ticket.getAvailableTickets(data, ticketOption)
     for (const ticket of availableTickets) {
       try {
         // TODO improve the amount of tickets that should be bought
-        if (await Ticket.buyTicket(token, ticket)) {
+        if (await Ticket.buyTicketsInListing(token, ticket)) {
           setTimeout(loop, 5000)
           return
         }
@@ -36,7 +39,11 @@ export async function start({
       }
     }
     if (availableTickets.length === 0) {
-      const eventName = _.get(data, '[0].data.node.name')
+      const eventName = _.get(
+        data,
+        '[0].data.node.name',
+        _.get(data, '[0].data.node.title')
+      )
       console.log(new Date(), `${eventName || '#ERROR'} - No tickets`)
       if (!eventName) {
         console.log(new Date(), JSON.stringify(data))

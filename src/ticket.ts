@@ -1,18 +1,18 @@
 import * as _ from 'lodash'
 import { EventData } from './event'
-import { Cart } from './cart'
+import * as Cart from './cart'
 import notifier from 'node-notifier'
 
-export type AvailableTicket = {
+export type AvailableListing = {
   hash: string
-  url: string
   listingId: string
+  amountOfTickets: number
 }
 
 export function getAvailableTickets(
   eventData: EventData,
   ticketOption: number
-): { hash: string; url: string; listingId: string }[] {
+): AvailableListing[] {
   const edge = ticketOption - 1
   const nodes = _.get(
     eventData,
@@ -25,23 +25,31 @@ export function getAvailableTickets(
   )
 
   return nodes.map((node) => {
-    const path = _.get(node, 'node.uri.url', '')
-    const pathSplit = path.split('?')
+    console.log(new Date(), JSON.stringify(node))
+    console.log(
+      new Date(),
+      JSON.stringify({
+        listingId: _.get(node, 'node.id'),
+        hash: _.get(node, 'node.hash'),
+        amountOfTickets: _.get(node, 'node.tickets.edges', []).length || 1,
+      })
+    )
     return {
-      url: pathSplit[0],
       listingId: _.get(node, 'node.id'),
       hash: _.get(node, 'node.hash'),
+      amountOfTickets: _.get(node, 'node.tickets.edges', []).length || 1,
     }
   })
 }
 
-export async function buyTicket(
+export async function buyTicketsInListing(
   token: string,
-  ticket: AvailableTicket
+  listing: AvailableListing
 ): Promise<boolean> {
   const result = await Cart.addTicket(token, {
-    listingId: ticket.listingId,
-    hash: ticket.hash,
+    listingId: listing.listingId,
+    hash: listing.hash,
+    amountOfTickets: listing.amountOfTickets,
   })
 
   const cartId = _.get(result, '[0].data.addTicketsToCart.cart.id')
@@ -56,9 +64,9 @@ export async function buyTicket(
       .filter((m) => m)
       .join(' - ')
 
-    console.log(new Date(), 'Could not add ticket to card:', message)
+    console.log(new Date(), 'Could not add tickets(s) to card:', message)
   } else if (cartId) {
-    const msg = `Added ticket ${ticket.listingId} to cart`
+    const msg = `Added ${listing.amountOfTickets} tickets from listing ${listing.listingId} to cart`
     console.log(new Date(), msg)
     notifier.notify(msg)
     return true
